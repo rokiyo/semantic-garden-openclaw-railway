@@ -69,4 +69,20 @@ COPY src ./src
 ENV OPENCLAW_PUBLIC_PORT=8080
 ENV PORT=8080
 EXPOSE 8080
-CMD ["node", "src/server.js"]
+
+# Setup git credentials from GH_TOKEN for persistent authentication
+RUN mkdir -p /app/init && printf '%s\n' \
+  '#!/bin/bash' \
+  'set -e' \
+  'if [ -n "$GH_TOKEN" ] && [ -n "$GH_USER" ]; then' \
+  '  cat > ~/.netrc <<EOF' \
+  'machine github.com' \
+  'login ${GH_USER}' \
+  'password ${GH_TOKEN}' \
+  'EOF' \
+  '  chmod 600 ~/.netrc' \
+  'fi' \
+  'exec node src/server.js' \
+  > /app/init.sh && chmod +x /app/init.sh
+
+CMD ["/app/init.sh"]
